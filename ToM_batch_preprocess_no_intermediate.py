@@ -10,10 +10,15 @@ mne.set_log_level("WARNING")
 # 1. SUBJECTS / PATHS
 # ============================================================
 
-asd_sub_num_tom = [3301, 3390, 3381, 3400, 3261, 3291, 3371, 3351, 3331, 3311, 3271, 3191, 3321,
-                   3101, 3171, 3471, 3591, 3561, 3531, 3671, 3631]
+asd_sub_num_tom = [3431, 3301, 3390, 3441, 3361, 3381, 3400, 3261, 3520, 3711, 3690, 3291, 3371,
+                   3351, 3331, 3311, 3271, 3191, 3321, 3101, 3171, 3480, 3551, 3471, 3591, 3561, 
+                   3531, 3671, 3511, 3741, 3631, 3751, 3640, 3730, 3781, 3771, 3701, 3721, 3711]
 
-td_sub_num_tom = [4361, 4290, 4240, 4271, 4331, 4340, 4500, 4520, 4130, 4491, 4250, 4550, 4570]
+td_sub_num_tom = [4260, 4430, 4281, 4120, 4390, 4011, 4380, 4581, 4441, 4031, 4361, 4421, 4290,
+                  4240, 4271, 4221, 4331, 4480, 4560, 4320, 4231, 4541, 4340, 4500, 4451, 4400, 
+                  4410, 4160, 4110, 4471, 4511, 4351, 4370, 4301, 4531, 4461, 4520, 4130, 4491,
+                  4250, 4601, 4610, 4640, 4631, 4550, 4570, 4591, 4701, 4660, 4651, 4620, 4671, 
+                  4680, 4691, 4710, 4721, 4731, 4751]
 
 ROOTS = {
     "ASD": Path(r"F:\ASD projoect\ToM\ASD"),
@@ -511,7 +516,7 @@ print(summary_df.to_string(index=False))
 print("\nStatus counts:")
 print(summary_df["status"].value_counts())
 
-summary_path = Path(r"F:\ASD projoect\ToM") / "ToM_batch_preprocessing_summary.csv"
+summary_path = Path(r"F:\ASD projoect\ToM") / "ToM_batch_preprocessing_summary_3.csv"
 summary_df.to_csv(summary_path, index=False)
 
 print("\nSaved batch summary:", summary_path)
