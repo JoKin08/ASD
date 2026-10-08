@@ -280,7 +280,7 @@ def process_subject(group, subject_id):
         event_id=epoch_event_id,
         tmin=-0.2,
         tmax=1.0,
-        baseline=(-0.2, 0.0),
+        baseline=None,          # FIX: baseline after ICA
         metadata=metadata,
         preload=True,
         reject=None,
@@ -315,7 +315,7 @@ def process_subject(group, subject_id):
 
     epochs.drop_channels(["Trigger"])
 
-    montage = mne.channels.make_standard_montage("standard_1020")
+    montage = mne.channels.make_standard_montage("colin27_1020")
     epochs.set_montage(
         montage,
         match_case=False,
@@ -325,8 +325,14 @@ def process_subject(group, subject_id):
 
     # 1-Hz high-pass copy only for ICA fitting.
     epochs_ica_fit = epochs.copy().filter(
-        1.0,
-        30.0,
+        l_freq=1.0,
+        h_freq=30.0,
+        picks="eeg",
+        method="iir",
+        iir_params=dict(
+            order=4,
+            ftype="butter"
+        ),
         verbose=False,
     )
 
@@ -359,6 +365,12 @@ def process_subject(group, subject_id):
 
     epochs_after_ica = epochs.copy()
     ica.apply(epochs_after_ica, verbose=False)
+
+    # FIX: baseline after ICA
+    epochs_after_ica.apply_baseline(
+        baseline=(-0.2, 0.0)
+    )
+
     epochs_after_ica.drop_channels(["HEO", "VEO"])
 
     # -------------------- Bad-channel detection --------------------
