@@ -85,26 +85,123 @@ event_id_true = {str(code): code for code in all_codes}
 # ============================================================
 
 def load_subject_raw(subject_id, data_path):
-    """Load <ID>a_CV.cnt and concatenate optional <ID>b_CV.cnt."""
-    file_a = data_path / f"{subject_id}a_CV.cnt"
-    file_b = data_path / f"{subject_id}b_CV.cnt"
+    """
+    Load ToM CNT files.
 
-    if not file_a.exists():
-        raise FileNotFoundError(f"a file not found: {file_a}")
+    Supported naming styles:
+        3861a_CV.cnt
+        3861b_CV.cnt
 
-    raw_a = mne.io.read_raw_cnt(file_a, preload=True, verbose=False)
-    parts = ["a"]
+        3861_a Data.cnt
+        3861_b Data.cnt
+    """
 
-    if file_b.exists():
-        raw_b = mne.io.read_raw_cnt(file_b, preload=True, verbose=False)
+    # --------------------------------------------------------
+    # Possible names for part A / B
+    # --------------------------------------------------------
+
+    a_candidates = [
+        data_path / f"{subject_id}a_CV.cnt",
+        data_path / f"{subject_id}_a Data.cnt",
+    ]
+
+    b_candidates = [
+        data_path / f"{subject_id}b_CV.cnt",
+        data_path / f"{subject_id}_b Data.cnt",
+    ]
+
+    # --------------------------------------------------------
+    # Find existing A file
+    # --------------------------------------------------------
+
+    existing_a = [
+        p for p in a_candidates
+        if p.exists()
+    ]
+
+    if len(existing_a) == 0:
+        raise FileNotFoundError(
+            f"No A file found for {subject_id}. "
+            f"Tried: {[str(p) for p in a_candidates]}"
+        )
+
+    if len(existing_a) > 1:
+        raise RuntimeError(
+            f"Multiple A files found for {subject_id}: "
+            f"{existing_a}"
+        )
+
+    file_a = existing_a[0]
+
+    # --------------------------------------------------------
+    # Find optional B file
+    # --------------------------------------------------------
+
+    existing_b = [
+        p for p in b_candidates
+        if p.exists()
+    ]
+
+    if len(existing_b) > 1:
+        raise RuntimeError(
+            f"Multiple B files found for {subject_id}: "
+            f"{existing_b}"
+        )
+
+    file_b = (
+        existing_b[0]
+        if len(existing_b) == 1
+        else None
+    )
+
+    # --------------------------------------------------------
+    # Load A
+    # --------------------------------------------------------
+
+    raw_a = mne.io.read_raw_cnt(
+        file_a,
+        preload=True,
+        verbose=False
+    )
+
+    parts = [
+        file_a.name
+    ]
+
+    # --------------------------------------------------------
+    # Load and concatenate optional B
+    # --------------------------------------------------------
+
+    if file_b is not None:
+
+        raw_b = mne.io.read_raw_cnt(
+            file_b,
+            preload=True,
+            verbose=False
+        )
 
         if raw_a.ch_names != raw_b.ch_names:
-            raise RuntimeError("a/b channel order does not match")
-        if raw_a.info["sfreq"] != raw_b.info["sfreq"]:
-            raise RuntimeError("a/b sampling rates do not match")
+            raise RuntimeError(
+                "a/b channel order does not match"
+            )
 
-        raw = mne.concatenate_raws([raw_a, raw_b], verbose=False)
-        parts.append("b")
+        if (
+            raw_a.info["sfreq"]
+            != raw_b.info["sfreq"]
+        ):
+            raise RuntimeError(
+                "a/b sampling rates do not match"
+            )
+
+        raw = mne.concatenate_raws(
+            [raw_a, raw_b],
+            verbose=False
+        )
+
+        parts.append(
+            file_b.name
+        )
+
     else:
         raw = raw_a
 
