@@ -33,7 +33,7 @@ DATA_PATHS = {
 RUN_GROUPS = ["ASD", "TD"]
 
 # Matches e.g. 2371_RF_CV.cnt or 1011_CF_CV.cnt
-FILE_PATTERN = "{sid}_CF_CV.cnt"
+FILE_PATTERN = "{sid}_RF_CV.cnt"
 
 # Set True only if you want to skip subjects that already have final output.
 SKIP_IF_DONE = False
@@ -616,7 +616,7 @@ for group in RUN_GROUPS:
 # ============================================================
 
 summary_df = pd.DataFrame(summary)
-summary_path = BASE / "EF_batch_preprocessing_summary3_CF.csv"
+summary_path = BASE / "EF_batch_preprocessing_summary3_RF.csv"
 summary_df.to_csv(summary_path, index=False)
 
 print("\n========== FINAL SUMMARY ==========")

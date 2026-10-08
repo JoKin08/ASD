@@ -10,15 +10,37 @@ mne.set_log_level("WARNING")
 # 1. SUBJECTS / PATHS
 # ============================================================
 
-asd_sub_num_tom = [3431, 3301, 3390, 3441, 3361, 3381, 3400, 3261, 3520, 3711, 3690, 3291, 3371,
-                   3351, 3331, 3311, 3271, 3191, 3321, 3101, 3171, 3480, 3551, 3471, 3591, 3561, 
-                   3531, 3671, 3511, 3741, 3631, 3751, 3640, 3730, 3781, 3771, 3701, 3721, 3711]
+asd_sub_num_tom = [
+    3431, 3301, 3390, 3441, 3361, 3381, 3400, 3261, 3520, 
+    3711, 3690, 3291, 3371, 3351, 3331, 3311, 3271, 3191, 
+    3321, 3101, 3171, 3480, 3551, 3471, 3591, 3561, 3531, 
+    3671, 3511, 3741, 3631, 3751, 3640, 3730, 3781, 3771, 
+    3701, 3721, 3711,
+    3301, 3390, 3381, 3400, 3261, 3291, 3371, 3351, 3331, 
+    3311, 3271, 3191, 3321, 3101, 3171, 3471, 3591, 3561, 
+    3531, 3671, 3631,
+    3200, 3081, 3041, 3061, 3161, 3071, 3111, 3121,
+    3021, 3011, 3051,
+    3571, 3231, 3421, 3091, 3211, 3181, 3141, 3241, 3361,
+    3131, 3601, 3281, 3031, 3501, 3541, 3491, 3611, 3581,
+    3461, 3450, 3411, 3221, 3151, 3250, 3341
+    ]
 
-td_sub_num_tom = [4260, 4430, 4281, 4120, 4390, 4011, 4380, 4581, 4441, 4031, 4361, 4421, 4290,
-                  4240, 4271, 4221, 4331, 4480, 4560, 4320, 4231, 4541, 4340, 4500, 4451, 4400, 
-                  4410, 4160, 4110, 4471, 4511, 4351, 4370, 4301, 4531, 4461, 4520, 4130, 4491,
-                  4250, 4601, 4610, 4640, 4631, 4550, 4570, 4591, 4701, 4660, 4651, 4620, 4671, 
-                  4680, 4691, 4710, 4721, 4731, 4751]
+td_sub_num_tom = [
+    4260, 4430, 4281, 4120, 4390, 4011, 4380, 4581, 4441, 
+    4031, 4361, 4421, 4290, 4240, 4271, 4221, 4331, 4480, 
+    4560, 4320, 4231, 4541, 4340, 4500, 4451, 4400, 4410, 
+    4160, 4110, 4471, 4511, 4351, 4370, 4301, 4531, 4461, 
+    4520, 4130, 4491, 4250, 4601, 4610, 4640, 4631, 4550, 
+    4570, 4591, 4701, 4660, 4651, 4620, 4671, 4680, 4691, 
+    4710, 4721, 4731, 4751,
+    4361, 4290, 4240, 4271, 4331, 4340, 4500, 4520, 4130, 
+    4491, 4250, 4550, 4570,
+    4150, 4181, 4171, 4210, 4091, 4080, 4071, 4141,
+    4260, 4430, 4281, 4390, 4380, 4441, 4421, 4331, 4480,
+    4320, 4231, 4451, 4400, 4410, 4160, 4110, 4471, 4511,
+    4351, 4370, 4301, 4531, 4461
+    ]
 
 ROOTS = {
     "ASD": Path(r"F:\ASD projoect\ToM\ASD"),
@@ -163,9 +185,6 @@ def cut_epochs(raw_proc, trial_df):
         if h.shape[1] != expected_n or t.shape[1] != expected_n:
             continue
 
-        h = h - h[:, :n_pre].mean(axis=1, keepdims=True)
-        t = t - t[:, :n_pre].mean(axis=1, keepdims=True)
-
         hearing.append(h)
         thinking.append(t)
         kept.append(idx)
@@ -198,30 +217,111 @@ def make_epochs(eeg, times, channels, sfreq, metadata):
         verbose=False,
     )
 
-    montage = mne.channels.make_standard_montage("standard_1020")
+    montage = mne.channels.make_standard_montage("colin27_1020")
     epochs.set_montage(montage, match_case=False, on_missing="ignore", verbose=False)
     return epochs
 
 
 def run_ica(epochs):
     """ICA in memory only; no intermediate files are saved."""
+
     for ch in ["HEO", "VEO"]:
         if ch not in epochs.ch_names:
-            raise RuntimeError(f"Missing required channel: {ch}")
+            raise RuntimeError(
+                f"Missing required channel: {ch}"
+            )
 
-    ica = ICA(n_components=0.99, random_state=42, max_iter="auto")
-    ica.fit(epochs, picks="eeg", verbose=False)
+    # --------------------------------------------------------
+    # Temporary 1–30 Hz copy ONLY for ICA fitting
+    # Use IIR because epochs are relatively short.
+    # --------------------------------------------------------
 
-    heog_idx, _ = ica.find_bads_eog(epochs, ch_name="HEO", verbose=False)
-    veog_idx, _ = ica.find_bads_eog(epochs, ch_name="VEO", verbose=False)
-    ica.exclude = sorted(set(heog_idx + veog_idx))
+    epochs_ica_fit = epochs.copy().filter(
+        l_freq=0.05,
+        h_freq=30.0,
+        picks=["eeg", "eog"],
+        method="iir",
+        iir_params=dict(
+            order=4,
+            ftype="butter"
+        ),
+        verbose=False,
+    )
+
+    # --------------------------------------------------------
+    # Fit ICA
+    # --------------------------------------------------------
+
+    ica = ICA(
+        n_components=0.99,
+        random_state=42,
+        max_iter="auto"
+    )
+
+    ica.fit(
+        epochs_ica_fit,
+        picks="eeg",
+        verbose=False
+    )
+
+    # --------------------------------------------------------
+    # Detect ocular components
+    # --------------------------------------------------------
+
+    heog_idx, _ = ica.find_bads_eog(
+        epochs_ica_fit,
+        ch_name="HEO",
+        verbose=False
+    )
+
+    veog_idx, _ = ica.find_bads_eog(
+        epochs_ica_fit,
+        ch_name="VEO",
+        verbose=False
+    )
+
+    ica.exclude = sorted(
+        set(heog_idx + veog_idx)
+    )
+
+    # --------------------------------------------------------
+    # Apply ICA to ORIGINAL 0.1–60 Hz epochs
+    # --------------------------------------------------------
 
     cleaned = epochs.copy()
-    ica.apply(cleaned, verbose=False)
 
-    drop_chs = [ch for ch in ["HEO", "VEO", "Trigger"] if ch in cleaned.ch_names]
+    ica.apply(
+        cleaned,
+        verbose=False
+    )
+
+    # --------------------------------------------------------
+    # Baseline correction AFTER ICA
+    # --------------------------------------------------------
+
+    cleaned.apply_baseline(
+        baseline=(-0.2, 0.0),
+        verbose=False
+    )
+
+    # --------------------------------------------------------
+    # Remove non-EEG channels
+    # --------------------------------------------------------
+
+    drop_chs = [
+        ch
+        for ch in [
+            "HEO",
+            "VEO",
+            "Trigger"
+        ]
+        if ch in cleaned.ch_names
+    ]
+
     if drop_chs:
-        cleaned.drop_channels(drop_chs)
+        cleaned.drop_channels(
+            drop_chs
+        )
 
     return cleaned, ica.exclude
 
