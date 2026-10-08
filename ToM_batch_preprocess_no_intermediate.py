@@ -43,8 +43,8 @@ td_sub_num_tom = [
     ]
 
 ROOTS = {
-    "ASD": Path(r"F:\ASD projoect\ToM\ASD"),
-    "TD": Path(r"F:\ASD projoect\ToM\TD"),
+    "ASD": Path(r"H:\ASD projoect\ToM\ASD"),
+    "TD": Path(r"H:\ASD projoect\ToM\TD"),
 }
 
 SUBJECTS = {
@@ -102,12 +102,12 @@ def load_subject_raw(subject_id, data_path):
 
     a_candidates = [
         data_path / f"{subject_id}a_CV.cnt",
-        data_path / f"{subject_id}_a Data.cnt",
+        data_path / f"{subject_id}_a_CV.cnt",
     ]
 
     b_candidates = [
         data_path / f"{subject_id}b_CV.cnt",
-        data_path / f"{subject_id}_b Data.cnt",
+        data_path / f"{subject_id}_b_CV.cnt",
     ]
 
     # --------------------------------------------------------
